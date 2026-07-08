@@ -2,15 +2,16 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import io
+from datetime import datetime
 
 # Configuración de página nativa en modo ancho
-st.set_page_config(layout="wide", page_title="CIP Learning Experience Platform")
+st.set_page_config(layout="wide", page_title="Empresa Tatatal - Learning Experience Platform")
 
 # =========================================================================
 # 1. MOTOR DE BASE DE DATOS LOCAL (SQLITE)
 # =========================================================================
 def inicializar_bd_lms():
-    conn = sqlite3.connect("cip_lms_platform.db")
+    conn = sqlite3.connect("tatatal_lms_platform.db")
     cursor = conn.cursor()
     
     # Tabla de Alumnos
@@ -112,7 +113,7 @@ def aplicar_estilos_institucionales():
         .stTabs [data-baseweb="tab"] { font-weight: 700 !important; color: #475569 !important; font-size: 16px; }
         .stTabs [data-baseweb="tab"][aria-selected="true"] { color: #1E3A8A !important; border-bottom: 3px solid #1E3A8A !important; }
         
-        /* Tarjetas informativas de plugins o KPI */
+        /* Tarjetas informativas de plugins */
         .plugin-card { border: 2px solid #0F172A; padding: 15px; border-radius: 6px; margin-bottom: 10px; background-color: #F8FAFC; }
         </style>
     """, unsafe_allow_html=True)
@@ -123,8 +124,9 @@ aplicar_estilos_institucionales()
 # 3. INTERFAZ Y NAVEGACIÓN PRINCIPAL
 # =========================================================================
 
-# Menú lateral e identificación
-st.sidebar.markdown("## CIP Campus Virtual")
+# Menú lateral e identificación de marca
+st.sidebar.markdown("## Empresa Tatatal")
+st.sidebar.markdown("Campus Virtual")
 st.sidebar.markdown("Bienvenido, **Administrador**")
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Estado del Servidor")
@@ -133,7 +135,7 @@ st.sidebar.success("Sistema Operativo / Online")
 # Banner de Cabecera
 st.markdown("""
     <div class="lms-header">
-        <div class="lms-title">⚙️ CIP Learning Experience Platform (LXP)</div>
+        <div class="lms-title">⚙️ Empresa Tatatal - Learning Experience Platform (LXP)</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -152,7 +154,7 @@ with tabs[0]:
     st.markdown("### Gestión de Paquetes SCORM")
     st.markdown("Suba y registre paquetes estandarizados SCORM (archivos comprimidos .zip) para el despliegue automático de unidades didácticas interactivas.")
     
-    conn = sqlite3.connect("cip_lms_platform.db")
+    conn = sqlite3.connect("tatatal_lms_platform.db")
     
     with st.form("alta_scorm"):
         st.markdown("**Nuevo Paquete SCORM**")
@@ -189,9 +191,9 @@ with tabs[1]:
     st.markdown("### Matriculación Masiva de Alumnos")
     st.markdown("Cargue un archivo estructurado CSV para dar de alta de forma simultánea múltiples expedientes de estudiantes.")
     
-    # Plantilla de ejemplo descargable o visible
+    # Plantilla de ejemplo
     with st.expander("Ver estructura requerida del archivo CSV"):
-        st.code("""uid,nombre,email,rol\n12345678A,Juan Perez,juan@campus.es,Estudiante\n87654321B,Ana Gomez,ana@campus.es,Estudiante""", language="text")
+        st.code("""uid,nombre,email,rol\n12345678A,Juan Perez,juan@tatatal.es,Estudiante\n87654321B,Ana Gomez,ana@tatatal.es,Estudiante""", language="text")
         
     archivo_csv = st.file_uploader("Subir archivo de alumnos (.csv):", type=["csv"])
     
@@ -202,7 +204,7 @@ with tabs[1]:
             st.dataframe(df_usuarios, use_container_width=True)
             
             if st.button("Confirmar e Importar Alumnos a la Base de Datos"):
-                conn = sqlite3.connect("cip_lms_platform.db")
+                conn = sqlite3.connect("tatatal_lms_platform.db")
                 cursor = conn.cursor()
                 
                 exitos = 0
@@ -222,11 +224,11 @@ with tabs[1]:
                 st.success(f"Procesamiento completo: {exitos} alumnos matriculados correctamente. {errores} registros omitidos por duplicidad.")
                 st.rerun()
         except Exception as e:
-            st.error(f"Error al leer el archivo CSV. Asegúrese de que cumple con las columnas requeridas (uid, nombre, email, rol). Detalle: {e}")
+            st.error(f"Error al leer el archivo CSV. Asegúrese de que cumple con las columnas requeridas. Detalle: {e}")
 
     st.markdown("---")
     st.markdown("#### Listado Completo de Usuarios Registrados")
-    conn = sqlite3.connect("cip_lms_platform.db")
+    conn = sqlite3.connect("tatatal_lms_platform.db")
     df_alumnos = pd.read_sql("SELECT uid as [Identificador/DNI], nombre as [Nombre Completo], email as [Correo Electrónico], rol as [Rol Asignado] FROM alumnos", conn)
     st.dataframe(df_alumnos, use_container_width=True, hide_index=True)
     conn.close()
@@ -238,10 +240,9 @@ with tabs[2]:
     st.markdown("### Configuración de Complementos y Módulos (Plugins)")
     st.markdown("Extienda la capacidad técnica de la plataforma activando o desactivando los módulos core del sistema en tiempo real.")
     
-    conn = sqlite3.connect("cip_lms_platform.db")
+    conn = sqlite3.connect("tatatal_lms_platform.db")
     cursor = conn.cursor()
     
-    # Formulario para añadir nuevos plugins al sistema de archivos virtual
     with st.form("nuevo_plugin"):
         st.markdown("**Instalar Nuevo Plugin**")
         c1, c2 = st.columns(2)
@@ -264,7 +265,6 @@ with tabs[2]:
     st.markdown("---")
     st.markdown("#### Panel de Control de Plugins del Núcleo")
     
-    # Leer plugins actuales
     cursor.execute("SELECT id_plugin, nombre, descripcion, estado FROM plugins_sistema")
     lista_plugins = cursor.fetchall()
     
@@ -272,7 +272,6 @@ with tabs[2]:
         id_plg, nombre, desc, estado = plg
         estado_texto = "🟢 ACTIVO" if estado == 1 else "🔴 DESACTIVADO"
         
-        # Renderizado estructurado
         st.markdown(f"""
             <div class="plugin-card">
                 <span style="float: right; font-weight: bold; color: {'#16A34A' if estado==1 else '#DC2626'};">{estado_texto}</span>
@@ -281,7 +280,6 @@ with tabs[2]:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botón de conmutación de estado interactivo por cada plugin
         label_btn = "Desactivar" if estado == 1 else "Activar"
         if st.button(f"{label_btn} {nombre}", key=f"btn_{id_plg}"):
             nuevo_est = 0 if estado == 1 else 1
@@ -295,20 +293,20 @@ with tabs[2]:
 # PESTAÑA 4: ÁREA DE CONTENIDOS DE AYUDA Y SOPORTE
 # -------------------------------------------------------------------------
 with tabs[3]:
-    st.markdown("### Centro de Ayuda e Documentación Técnica")
+    st.markdown("### Centro de Ayuda y Documentación Técnica")
     st.markdown("Consulte las guías básicas de operación basadas en los estándares internacionales de teleformación.")
     
     with st.expander("Preguntas Frecuentes - ¿Cómo se realiza el rastreo de progreso en SCORM?"):
         st.markdown("""
         La plataforma implementa el puente API nativo para capturar las variables estándar enviadas por los paquetes interactivos:
         - `cmi.core.lesson_status` (Completado, Incompleto, Suspendido)
-        - `cmi.core.score.raw` (Calificación o puntuación directa obtenida en los cuestionarios integrados)
-        - `cmi.core.session_time` (Tiempo efectivo de permanencia del alumno en la unidad didáctica)
+        - `cmi.core.score.raw` (Calificación directa obtenida en los cuestionarios integrados)
+        - `cmi.core.session_time` (Tiempo de permanencia del alumno en la unidad didáctica)
         """)
         
     with st.expander("Manual de Integración de Extensiones y API de Plugins"):
         st.markdown("""
-        Cada plugin añadido a la plataforma debe registrarse en la tabla maestro e implementar los métodos gancho (*hooks*) obligatorios para no interferir en el renderizado síncrono del campus virtual.
+        Cada plugin añadido a la plataforma de **Empresa Tatatal** debe registrarse en la tabla maestro e implementar los métodos gancho obligatorios para no interferir en el renderizado síncrono del campus virtual.
         """)
         
     st.info("Para asistencia directa o incidencias críticas con los servidores, puede remitir un correo electrónico al departamento de soporte corporativo.")
